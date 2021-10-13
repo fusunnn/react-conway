@@ -1,14 +1,13 @@
 import React from "react";
 
-export default function Cell({ sideLength, cellColor }) {
+export default function Cell({ sideLength, deadColor, borderColor, numba }) {
   return (
     <div
       style={{
         height: sideLength,
         width: sideLength,
-        borderWidth: 100,
-        backgroundColor: cellColor,
-        borderColor: "blue",
+        backgroundColor: numba === 0 ? deadColor : borderColor,
+        border: `1px solid ${borderColor}`,
       }}
     ></div>
   );
