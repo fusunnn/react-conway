@@ -66,8 +66,9 @@ function App() {
 
   const getStatus = (neighbours, i, j) => {
     let aliveCount = 0;
-    for (let i = 0; i > neighbours.length; i++) {
-      var iteration = neighbours[i];
+    for (let k = 0; k < neighbours.length; k++) {
+      var iteration = neighbours[k];
+      // console.log(cells[iteration[0]][iteration[1]]);
       if (cells[iteration[0]][iteration[1]] === 1) {
         aliveCount += 1;
       }
@@ -87,16 +88,16 @@ function App() {
     }
   };
 
-  const checkCells = async () => {
+  const checkCells = () => {
+    console.log(cells);
     let tempStore = [...cells];
     for (let i = 0; i < cells.length; i++) {
       for (let j = 0; j < cells.length; j++) {
         const neighbours = getNeighbours(i, j);
-        tempStore[i][j] = await getStatus(neighbours, i, j);
+        tempStore[i][j] = getStatus(neighbours, i, j);
       }
     }
-    console.log(tempStore);
-    setCells(tempStore);
+    // setCells(tempStore);
   };
 
   return (
@@ -136,7 +137,7 @@ function App() {
                       key={index}
                       deadColor={"white"}
                       borderColor={boardColor}
-                      sideLength={30}
+                      sideLength={3}
                       numba={numba}
                     />
                   );
