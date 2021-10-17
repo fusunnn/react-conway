@@ -1,5 +1,5 @@
 import "./App.css";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Cell from "./components/Cell";
 
 function getRandomInt(min, max) {
@@ -8,96 +8,98 @@ function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+const initBoard = (rows, cols) => {
+  const bools = [true, false];
+  let grid = [];
+  for (let i = 0; i < rows; i++) {
+    let row = [];
+    for (let j = 0; j < cols; j++) {
+      row.push(false);
+    }
+    grid.push(row);
+  }
+  return grid;
+};
+
 function App() {
   const boardColor = "#282c34";
   const rows = 25;
   const cols = 25;
-  const [cells, setCells] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [counter, setCounter] = useState(0);
+  const [cells, setCells] = useState(initBoard(rows, cols));
 
-  useEffect(() => {
-    if (counter < 1) {
-      initializeCells(rows, cols);
+  const getNumberOfNeighbours = (i, j, gridCopy) => {
+    let neighbourCount = 0;
+    for (let x = -1; x < 2; x++) {
+      for (let y = -1; y < 2; y++) {
+        if (x === 0 && y === 0) {
+          continue;
+        } else {
+          if ((i + x) % rows < 0) {
+            if ((j + y) % cols < 0) {
+              if (gridCopy[rows - 1][cols - 1] === true) {
+                neighbourCount++;
+              }
+            } else {
+              if (gridCopy[rows - 1][(j + y) % cols] === true) {
+                neighbourCount++;
+              }
+            }
+          } else if ((j + y) % cols < 0) {
+            if (gridCopy[(i + x) % rows][cols - 1] === true) {
+              neighbourCount++;
+            }
+          } else {
+            if (gridCopy[(i + x) % rows][(j + y) % cols] === true) {
+              neighbourCount++;
+            }
+          }
+        }
+      }
     }
-  });
-  const dirtyWork = async (rows, cols) => {
-    let grid = [];
-    for (let i = 0; i < rows; i++) {
-      let row = [];
-      for (let j = 0; j < cols; j++) {
-        row.push(getRandomInt(0, 1));
-      }
-      grid.push(row);
-    }
-    return grid;
-  };
-  const initializeCells = (rows, cols) => {
-    setCounter(counter + 1);
-    dirtyWork(rows, cols)
-      .then((res) => {
-        setCells(res);
-      })
-      .then(() => {
-        setLoading(false);
-      });
+    return neighbourCount;
   };
 
-  const getNeighbours = (i, j) => {
-    const neighbours = [];
-    // neighbours.push(cells[i][j - 1]);
-    // neighbours.push(cells[i][j + 1]);
-    // neighbours.push(cells[i - 1][j]);
-    // neighbours.push(cells[i + 1][j]);
-    // neighbours.push(cells[i + 1][j - 1]);
-    // neighbours.push(cells[i - 1][j - 1]);
-    // neighbours.push(cells[i + 1][j + 1]);
-    // neighbours.push(cells[i - 1][j + 1]);
-    neighbours.push([i, j - 1]);
-    neighbours.push([i, j + 1]);
-    neighbours.push([i - 1, j]);
-    neighbours.push([i + 1, j]);
-    neighbours.push([i + 1, j - 1]);
-    neighbours.push([i - 1, j - 1]);
-    neighbours.push([i + 1, j + 1]);
-    neighbours.push([i - 1, j + 1]);
-    return neighbours;
-  };
-
-  const getStatus = (neighbours, i, j) => {
-    let aliveCount = 0;
-    for (let k = 0; k < neighbours.length; k++) {
-      var iteration = neighbours[k];
-      // console.log(cells[iteration[0]][iteration[1]]);
-      if (cells[iteration[0]][iteration[1]] === 1) {
-        aliveCount += 1;
-      }
-      if (cells[i][j] === 1 && aliveCount === 2) {
-        return 1;
-      } else if (cells[i][j] === 1 && aliveCount === 3) {
-        return 1;
-      } else if (cells[i][j] === 0 && aliveCount === 3) {
-        return 1;
-      } else if (cells[i][j] === 1 && aliveCount > 3) {
-        return 0;
-      } else if (cells[i][j] === 1 && aliveCount < 2) {
-        return 0;
-      } else {
-        return 0;
-      }
+  const getNewStatus = (i, j, numberOfNeighbours, gridCopy) => {
+    if (numberOfNeighbours > 3) {
+      return false;
+    } else if (numberOfNeighbours < 2) {
+      return false;
+    } else if (2 <= numberOfNeighbours <= 3 && gridCopy[i][j] === true) {
+      return true;
+    } else if (numberOfNeighbours === 3 && gridCopy[i][j] === false) {
+      return true;
+    } else {
+      return false;
     }
   };
 
   const checkCells = () => {
-    console.log(cells);
-    let tempStore = [...cells];
+    const gridCopy = [];
+
+    for (var x = 0; x < cells.length; x++) {
+      let tempArray = [];
+      for (var z = 0; z < cells.length; z++) {
+        tempArray.push(cells[x][z]);
+      }
+      gridCopy.push(tempArray);
+    }
+
+    let newGrid = [...cells];
     for (let i = 0; i < cells.length; i++) {
       for (let j = 0; j < cells.length; j++) {
-        const neighbours = getNeighbours(i, j);
-        tempStore[i][j] = getStatus(neighbours, i, j);
+        const numberOfNeighbours = getNumberOfNeighbours(i, j, gridCopy);
+        const newStatus = getNewStatus(i, j, numberOfNeighbours, gridCopy);
+
+        newGrid[i][j] = newStatus;
       }
     }
-    // setCells(tempStore);
+    setCells(newGrid);
+  };
+
+  const cellClickedHandler = (i, j) => {
+    let temporaryGrid = [...cells];
+    temporaryGrid[i][j] = !temporaryGrid[i][j];
+    setCells(temporaryGrid);
   };
 
   return (
@@ -117,36 +119,34 @@ function App() {
           checkCells();
         }}
       >
-        Hello
+        Start
       </button>
-      {loading ? (
-        <p>Hi</p>
-      ) : (
-        <div
-          style={{
-            backgroundColor: "black",
-            border: "1px solid white",
-          }}
-        >
-          {cells.map((cell, index) => {
-            return (
-              <div key={index} style={{ display: "flex" }}>
-                {cell.map((numba, index) => {
-                  return (
+
+      <div
+        style={{
+          backgroundColor: "black",
+          border: "1px solid white",
+        }}
+      >
+        {cells.map((cell, i) => {
+          return (
+            <div key={i} style={{ display: "flex" }}>
+              {cell.map((status, j) => {
+                return (
+                  <div onClick={() => cellClickedHandler(i, j)} key={j}>
                     <Cell
-                      key={index}
-                      deadColor={"white"}
-                      borderColor={boardColor}
+                      aliveColor={"white"}
+                      mainColor={boardColor}
                       sideLength={3}
-                      numba={numba}
+                      status={status}
                     />
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
