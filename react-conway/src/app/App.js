@@ -186,8 +186,8 @@ function App() {
             transition: "all .4s ease",
             pointerEvents: isRunning ? "none" : "auto",
             position: "absolute",
-            right: "27vw",
-            top: "7vh",
+            right: (100 - 43) / 2 + "vw",
+            top: "9vh",
           }}
           onClick={() => clearHandler()}
         >
@@ -209,8 +209,8 @@ function App() {
                     <Cell
                       aliveColor={"white"}
                       mainColor={boardColor}
-                      height={75 / rows + "vh"}
-                      width={75 / cols + "vh"}
+                      height={40 / rows + "vw"}
+                      width={40 / cols + "vw"}
                       status={status}
                       i={i}
                       j={j}
