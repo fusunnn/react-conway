@@ -2,14 +2,8 @@ import "./App.css";
 import { useState } from "react";
 import Cell from "./components/Cell";
 
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
+//function which takes in the number of rows and columns you want, returns an array of the indicated dimensions
 const initBoard = (rows, cols) => {
-  const bools = [true, false];
   let grid = [];
   for (let i = 0; i < rows; i++) {
     let row = [];
@@ -26,7 +20,62 @@ function App() {
   const rows = 25;
   const cols = 25;
   const [cells, setCells] = useState(initBoard(rows, cols));
+  const [mouseDown, setMouseDown] = useState(false);
+  const [runInterval, setRunInterval] = useState();
+  const [isRunning, setIsRunning] = useState(false);
 
+  //Mouse handling functions, to be able to drag click the cells to add alive cells
+  const onMouseDown = (i, j) => {
+    setMouseDown(true);
+    cellClickedHandler(i, j);
+  };
+
+  const onMouseEnter = (i, j) => {
+    if (mouseDown) {
+      cellClickedHandler(i, j);
+    }
+  };
+
+  const onMouseUp = () => {
+    setMouseDown(false);
+  };
+  const cellClickedHandler = (i, j) => {
+    let temporaryGrid = [...cells];
+    temporaryGrid[i][j] = !temporaryGrid[i][j];
+    setCells(temporaryGrid);
+  };
+  //end of click handling fucntions
+
+  //function to handle the clear button getting clicked, sets all the cells to dead
+  const clearHandler = () => {
+    const temporaryGrid = [...cells];
+    for (var i = 0; i < temporaryGrid.length; i++) {
+      for (var j = 0; j < temporaryGrid[i].length; j++) {
+        temporaryGrid[i][j] = false;
+      }
+    }
+    setCells(temporaryGrid);
+  };
+
+  //These are all the logic handling function, to check the baord and update it
+
+  //this function takes in the number of neighbors who are alive that a cell has and tells you whether it should be alive or die
+  const getNewStatus = (i, j, numberOfNeighbours, gridCopy) => {
+    if (numberOfNeighbours > 3) {
+      return false;
+    } else if (numberOfNeighbours < 2) {
+      return false;
+    } else if (2 <= numberOfNeighbours <= 3 && gridCopy[i][j] === true) {
+      return true;
+    } else if (numberOfNeighbours === 3 && gridCopy[i][j] === false) {
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  //this funciton checks all the neighbors of a cell, sees if they're alive, returns the number of neighbors who are alive
+  //the checking is a bit weird because the board is "infintie" - credit to erni for the modulo checking
   const getNumberOfNeighbours = (i, j, gridCopy) => {
     let neighbourCount = 0;
     for (let x = -1; x < 2; x++) {
@@ -59,20 +108,8 @@ function App() {
     return neighbourCount;
   };
 
-  const getNewStatus = (i, j, numberOfNeighbours, gridCopy) => {
-    if (numberOfNeighbours > 3) {
-      return false;
-    } else if (numberOfNeighbours < 2) {
-      return false;
-    } else if (2 <= numberOfNeighbours <= 3 && gridCopy[i][j] === true) {
-      return true;
-    } else if (numberOfNeighbours === 3 && gridCopy[i][j] === false) {
-      return true;
-    } else {
-      return false;
-    }
-  };
-
+  //this is the main function which loops through the grid and uses the two above functions to get the cells' new status,
+  //to then finally update the grid to the new grid
   const checkCells = () => {
     const gridCopy = [];
 
@@ -96,11 +133,15 @@ function App() {
     setCells(newGrid);
   };
 
-  const cellClickedHandler = (i, j) => {
-    let temporaryGrid = [...cells];
-    temporaryGrid[i][j] = !temporaryGrid[i][j];
-    setCells(temporaryGrid);
+  const run = () => {
+    setIsRunning(!isRunning);
+
+    isRunning
+      ? clearInterval(runInterval)
+      : setRunInterval(setInterval(checkCells, 500));
   };
+
+  //end of logic functions
 
   return (
     <div
@@ -114,14 +155,45 @@ function App() {
         height: "100vh",
       }}
     >
-      <button
-        onClick={() => {
-          checkCells();
+      <div
+        style={{
+          display: "flex",
         }}
       >
-        Start
-      </button>
-
+        <img
+          src={
+            isRunning
+              ? "https://iconsplace.com/wp-content/uploads/_icons/ffffff/256/png/pause-icon-18-256.png"
+              : "https://www.friidesigns.com/wp-content/uploads/2018/11/white-play-icon-png-6.png"
+          }
+          alt="new"
+          onClick={() => {
+            run();
+          }}
+          style={{ height: "9vh", width: "auto", userSelect: "none" }}
+        />
+        <button
+          style={{
+            height: "5vh",
+            width: "6vw",
+            borderRadius: 10,
+            backgroundColor: isRunning ? "grey" : "red",
+            border: "none",
+            outline: "none",
+            alignItems: "center",
+            justifyContent: "center",
+            display: "flex",
+            transition: "all .4s ease",
+            pointerEvents: isRunning ? "none" : "auto",
+            position: "absolute",
+            right: "27vw",
+            top: "7vh",
+          }}
+          onClick={() => clearHandler()}
+        >
+          <h3>Clear</h3>
+        </button>
+      </div>
       <div
         style={{
           backgroundColor: "black",
@@ -133,12 +205,18 @@ function App() {
             <div key={i} style={{ display: "flex" }}>
               {cell.map((status, j) => {
                 return (
-                  <div onClick={() => cellClickedHandler(i, j)} key={j}>
+                  <div key={j}>
                     <Cell
                       aliveColor={"white"}
                       mainColor={boardColor}
-                      sideLength={3}
+                      height={75 / rows + "vh"}
+                      width={75 / cols + "vh"}
                       status={status}
+                      i={i}
+                      j={j}
+                      onMouseDown={(i, j) => onMouseDown(i, j)}
+                      onMouseEnter={(i, j) => onMouseEnter(i, j)}
+                      onMouseUp={() => onMouseUp()}
                     />
                   </div>
                 );
